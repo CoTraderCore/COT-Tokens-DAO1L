@@ -31,7 +31,7 @@ module.exports = function(deployer) {
   // Team address pass in Vesting contract
   const beneficiary = "0xf17f52151ebef6c7334fad080c5704d77216b732";
   // Tokens for Vesting contract
-  const amount = 30000000000;
+  const amount = 1000000000;
 
 
 
