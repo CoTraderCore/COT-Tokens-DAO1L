@@ -1,5 +1,4 @@
 # COT-Tokens-DAO3L
-# let's aviod the bad word dapp 
 
 1) Owner can mint limit tokens
 
