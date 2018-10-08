@@ -97,6 +97,15 @@ contract('MintNewTokens', function([_, wallet]) {
     await this.mint.ChangeOwnerDAO(wallet, { from: wallet }).should.be.rejectedWith(EVMRevert);
     });
 
+    it('Call ChanheOwner from owner should fail', async function() {
+    await this.mint.ChangeOwnerDAO(wallet, { from: _ }).should.be.rejectedWith(EVMRevert);
+    });
+
+    it('Call ChanheOwner from address with balance === halfTotalSupply should fail', async function() {
+    await this.mint.MintLimit(wallet, 40000000000);
+    await this.mint.ChangeOwnerDAO(wallet, { from: wallet }).should.be.rejectedWith(EVMRevert);
+    });
+
     it('Call ChanheOwner from address with balance > totalSuply / 2 should fulfilled', async function() {
     await this.mint.MintLimit(wallet, 40000000001);
     await this.mint.ChangeOwnerDAO(wallet, { from: wallet }).should.be.fulfilled;
@@ -105,11 +114,6 @@ contract('MintNewTokens', function([_, wallet]) {
   });
 
   describe('MintLimit correct limit', function() {
-    it('totalSuply equal 20000000000', async function() {
-    const totalSuply = await this.token.totalSupply();
-    assert.equal(totalSuply, 20000000000);
-    });
-
     it('Mint limit maximum should be fulfilled', async function() {
     const totalSuply = await this.token.totalSupply();
     await this.mint.MintLimit(wallet, 60000000000);
@@ -117,7 +121,7 @@ contract('MintNewTokens', function([_, wallet]) {
     assert.equal(totalSuplyAfter, 80000000000);
     });
 
-    it('Mint + 1 more limit should fail', async function() {
+    it('MintLimit maximum + 1 should fail', async function() {
     await this.mint.MintLimit(wallet, 60000000001).should.be.rejectedWith(EVMRevert);
     });
   });
