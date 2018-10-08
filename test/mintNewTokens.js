@@ -31,15 +31,15 @@ contract('MintNewTokens', function([_, wallet]) {
    );
 
      // Mint config
-     this.limit = 80000000000,
      this.halfTotalSupply = 40000000000,
+     this.limit = 80000000000,
      this.openingMintTime = latestTime() + duration.minutes(1) // 1 minute
 
      // Deploy MintNewTokens
      this.mint = await MintNewTokens.new(
        this.token.address,
-       this.limit,
        this.halfTotalSupply,
+       this.limit,
        this.openingMintTime
     );
     // Transfer token ownership to mint
@@ -92,20 +92,35 @@ contract('MintNewTokens', function([_, wallet]) {
     });
   });
 
-  // Works in console fails tests
-  // describe('MINT_CORRECT_LIMIT', function() {
-  //   it('totalSuply equal 20000000000', async function() {
-  //   const totalSuply = await this.token.totalSupply();
-  //   assert.equal(totalSuply, 20000000000);
-  //   });
-  //
-  //   it('Mint limit maximum should be fulfilled', async function() {
-  //   const totalSuply = await this.token.totalSupply();
-  //   await this.mint.MintLimit(wallet, 60000000000);
-  //   const totalSuplyAfter = await this.token.totalSupply();
-  //   assert.equal(totalSuplyAfter, 80000000000);
-  //   });
-  // });
+  describe('ChanheOwner 51%', function() {
+    it('Call ChanheOwner from address with balance 0 should fail', async function() {
+    await this.mint.ChangeOwnerDAO(wallet, { from: wallet }).should.be.rejectedWith(EVMRevert);
+    });
+
+    it('Call ChanheOwner from address with balance > totalSuply / 2 should fulfilled', async function() {
+    await this.mint.MintLimit(wallet, 40000000001);
+    await this.mint.ChangeOwnerDAO(wallet, { from: wallet }).should.be.fulfilled;
+    });
+
+  });
+
+  describe('MintLimit correct limit', function() {
+    it('totalSuply equal 20000000000', async function() {
+    const totalSuply = await this.token.totalSupply();
+    assert.equal(totalSuply, 20000000000);
+    });
+
+    it('Mint limit maximum should be fulfilled', async function() {
+    const totalSuply = await this.token.totalSupply();
+    await this.mint.MintLimit(wallet, 60000000000);
+    const totalSuplyAfter = await this.token.totalSupply();
+    assert.equal(totalSuplyAfter, 80000000000);
+    });
+
+    it('Mint + 1 more limit should fail', async function() {
+    await this.mint.MintLimit(wallet, 60000000001).should.be.rejectedWith(EVMRevert);
+    });
+  });
 
 
 })
