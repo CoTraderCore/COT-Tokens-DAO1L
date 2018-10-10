@@ -1,4 +1,4 @@
-# COT-Tokens-DAO3L
+# COT-Tokens-DAO1L
 
 1) Owner can mint limit tokens
 
