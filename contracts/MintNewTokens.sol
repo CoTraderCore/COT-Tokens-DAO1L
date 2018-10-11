@@ -1,30 +1,23 @@
 pragma solidity ^0.4.24;
-
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract MintNewTokens is Ownable{
-  using SafeERC20 for ERC20;
   using SafeMath for uint256;
 
-  ERC20 private token;
-  uint256 private totalSupplyHalf;
+  MintableToken private token;
   uint256 private limit;
   uint256 private openingTime;
 
   constructor(
-    ERC20 _token,
-    uint256 _totalSupplyHalf,
+    MintableToken _token,
     uint256 _limit,
     uint256 _openingTime
     )
     public {
     require(_token != address(0));
     token = _token;
-    totalSupplyHalf = _totalSupplyHalf;
     limit = _limit;
     openingTime = _openingTime;
   }
@@ -43,7 +36,7 @@ contract MintNewTokens is Ownable{
     uint256 _tokenAmount
   )
     public
-  onlyOwner()
+    onlyOwner()
   {
   require(token.totalSupply() < limit);
 
@@ -51,12 +44,11 @@ contract MintNewTokens is Ownable{
     _tokenAmount = 0;
   }
   require(_tokenAmount > 0);
-  // Potentially dangerous assumption about the type of the token.
-  require(MintableToken(address(token)).mint(_beneficiary, _tokenAmount));
+  require(token.mint(_beneficiary, _tokenAmount));
   }
 
   /*
-    Owner can mint 5% from totalSuply once a year (5 minute for test)
+    Owner can mint 5% from totalSuply once a year
   */
   function MintPercent(
     address _beneficiary
@@ -65,11 +57,9 @@ contract MintNewTokens is Ownable{
     onlyOwner()
     onlyWhenOpen()
   {
+  require(token.mint(_beneficiary, token.totalSupply().div(100).div(10)));
   // Update time
-  openingTime = now.add(30 seconds);
-
-  // Potentially dangerous assumption about the type of the token.
-  require(MintableToken(address(token)).mint(_beneficiary, token.totalSupply().div(100).mul(5)));
+  openingTime = now.add(7 days);
   }
 
 
@@ -78,23 +68,7 @@ contract MintNewTokens is Ownable{
   )
     public
   {
-  require(token.balanceOf(msg.sender) > totalSupplyHalf);
+  require(token.balanceOf(msg.sender) > token.totalSupply().div(2));
   super._transferOwnership(_newOwner);
   }
-
-  /*
-  Pool address with 51% balance can call mint function
-  require(pool_address > totalSupply / 2)
-  */
-
-  /* function MintForPoolAddress(
-    address _beneficiary,
-    uint256 _tokenAmount
-  )
-    public
-  {
-  require(token.balanceOf(msg.sender) > totalSupplyHalf);
-    // Potentially dangerous assumption about the type of the token.
-  require(MintableToken(address(token)).mint(_beneficiary, _tokenAmount));
-  } */
 }

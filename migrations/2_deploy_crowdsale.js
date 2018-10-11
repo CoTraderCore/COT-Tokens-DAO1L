@@ -13,25 +13,27 @@ const _duration = {
 
 
 module.exports = function(deployer) {
-  const name = "Cotrader";
+  const name = "CoTrader";
   const symbol = "COT";
   const decimals = 18;
-  const totalSupply = 20000000000;
-  const limit = 80000000000;
+  const totalSupply = 2000000000; // 2 000 000 000
+  const limit = 10000000000; // 10 000 000 000
 
-  const halfTotalSupply = 40000000000; // For 51% comparison
   const start = 1538568527; // Unix Data
-  const cliff = _duration.minutes(3); // Time in seconds
-  const duration = _duration.minutes(12); // Time in seconds
+  const cliff = _duration.years(1); // Time in seconds
+  const duration = _duration.years(4); // Time in seconds
   const revocable = false; // Owner can not return tokens until time runs out
 
-  const timeNow = Math.floor(Date.now() / 1000);
-  const openingMintTime = timeNow  + _duration.minutes(1);
+  const openingMintTime = web3.eth.getBlock('latest').timestamp  + _duration.days(7);
 
   // Team address pass in Vesting contract
   const beneficiary = "0xf17f52151ebef6c7334fad080c5704d77216b732";
   // Tokens for Vesting contract
-  const amount = 1000000000;
+  // limit * 0.1
+  const amount = 1000000000; // 1 000 000 000
+
+  // SEND ALL Tokens in Ropsten test deploy
+  const GaryAddress = "0x7035fb83a7c18289b94e443170bee56b92df8e46";
 
 
 
@@ -41,7 +43,7 @@ module.exports = function(deployer) {
     // Transfer 10B to Vesting contract
     token.transfer(VestingToken.address, amount);
   }).then(() => {
-    return deployer.deploy(MintNewTokens, Token.address, halfTotalSupply, limit, openingMintTime, {gas:5712388});
+    return deployer.deploy(MintNewTokens, Token.address, limit, openingMintTime, {gas:5712388});
   }).then(() => {
     const token = Token.at(Token.address);
     // Only contract can call mint function
