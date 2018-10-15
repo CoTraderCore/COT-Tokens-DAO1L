@@ -1,6 +1,11 @@
 require('babel-register');
 require('babel-polyfill');
 
+var HDWalletProvider = require("truffle-hdwallet-provider");
+
+var infura_apikey = "";
+var mnemonic = "";
+
 module.exports = {
   networks: {
     development: {
@@ -13,6 +18,13 @@ module.exports = {
       host: 'localhost',
       port: 8545,
       network_id: '*',
+    },
+    ropsten: {
+      provider: function() {
+		  return new HDWalletProvider(mnemonic, "https://ropsten.infura.io/"+infura_apikey)
+		  },
+      gas: 1000000,
+      network_id: 3,
     },
   },
   solc: {
