@@ -4,7 +4,7 @@
 
 2) Owner can mint 5% tokens from totalSupply() per year
 
-3) 10B to Team vested (time is seting in the migration)
+3) 10B to Team vested (time is setting in the migration)
 
 4) 20B will go to owner wallet for sales manually
 
@@ -20,13 +20,20 @@
 
 [Allow change owner for pool address (if pool balance > total / 2) (comment) (video)](https://vk.com/videos223443924?z=video223443924_456239566%2Fpl_223443924_-2)
 
+[transferOwnership Token from crowdsale to DAO (video)](https://vk.com/video?z=video223443924_456239580%2Fpl_cat_updates)
 
-# HOW MintNewTokens WORKS
 
-1) Token pass owner to MintNewTokens contract.
+# HOW DAO WORKS
 
-2) Only MintNewTokens can call function mint in Token contract.
+1) Crowdsale contract transferOnwership of Token contract to DAO contract
 
-3) Owner MintNewTokens contract can call function mint through MintNewTokens contract.
+2) Only DAO can call function mint in Token contract.
 
-Such a scheme is safe, and we limit the ability of the owner to create new tokens.
+3) Owner DAO contract can call function mint through DAO contract.
+
+4) address with 51% can change Owner
+
+# test
+
+truffle migrate --reset
+truffle test
