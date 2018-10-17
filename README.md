@@ -33,7 +33,16 @@
 
 4) address with 51% can change Owner
 
-# test
+# Install
+1) clone repo
+2) cd
+3) npm i --only=dev
 
-truffle migrate --reset
-truffle test
+# Test
+
+1) truffle migrate
+2) truffle test
+
+# Deploy
+1) Remove bild folder
+2) truffle migrate compile-all --network YOUR NETWORK
