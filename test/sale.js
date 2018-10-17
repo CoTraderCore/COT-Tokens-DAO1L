@@ -22,7 +22,7 @@ contract('Sale', function([_, wallet]) {
     this.symbol = "COT";
     this.decimals = 18;
     // ether convert 10 000 000 000 COT to 10000000000000000000000000000 hex
-    this.totalSupply = ether(10000000000);
+    this.totalSupply = ether(10);
 
     // Deploy Token
     this.token = await Token.new(
@@ -45,16 +45,17 @@ contract('Sale', function([_, wallet]) {
    );
 
     //Crowdsale
-    this.rate = 500;
+    this.rate = 1750000;
     this.wallet = "0x627306090abab3a6e1400e9345bc60c78a8bef57"; // TODO: Replace me
-
+    this.cap = ether(10); // CAP
     //Deploy sale
     this.sale = await Sale.new(
         this.rate,
         this.wallet,
         this.token.address,
         this.dao.address,
-        this.limit
+        this.limit,
+        this.cap
     );
     // block Tokens
     await this.token.pause();
@@ -70,6 +71,14 @@ contract('Sale', function([_, wallet]) {
 
     it('tokens init blocked', async function() {
     await this.token.transfer(wallet, ether(1)).should.be.rejectedWith(EVMRevert);
+    });
+
+    it('Correct init rate (PrePreSale by default) (25%)', async function() {
+    const oldBalance = await this.token.balanceOf(_);
+    await this.sale.sendTransaction({ value: ether(1), from: _});
+    const newBalance = await this.token.balanceOf(_);
+    const sum = await web3.fromWei(newBalance, 'ether') - web3.fromWei(oldBalance, 'ether');
+    assert.equal(sum, 1750000);
     });
   });
 
@@ -115,5 +124,51 @@ contract('Sale', function([_, wallet]) {
     await this.sale.sendTransaction({ value: ether(1), from: _}).should.be.rejectedWith(EVMRevert);
     });
   });
+
+  describe('BONUS for early investors', function() {
+    it('Owner can change ICOstate', async function() {
+    await this.sale.setCrowdsaleStage(1, { from:_ }).should.be.fulfilled;
+    });
+
+    it('NOT Owner can NOT change ICOstate', async function() {
+    await this.sale.setCrowdsaleStage(1, { from:wallet }).should.be.rejectedWith(EVMRevert);
+    });
+
+    it('Correct PrePreICO rate percent (25%)', async function() {
+    await this.sale.setCrowdsaleStage(0);
+    const oldBalance = await this.token.balanceOf(_);
+    await this.sale.sendTransaction({ value: ether(1), from: _});
+    const newBalance = await this.token.balanceOf(_);
+    const sum = await web3.fromWei(newBalance, 'ether') - web3.fromWei(oldBalance, 'ether');
+    assert.equal(sum, 1750000);
+    });
+
+    it('Correct PreICO  rate percent (10%)', async function() {
+    await this.sale.setCrowdsaleStage(1);
+    const oldBalance = await this.token.balanceOf(_);
+    await this.sale.sendTransaction({ value: ether(1), from: _});
+    const newBalance = await this.token.balanceOf(_);
+    const sum = await web3.fromWei(newBalance, 'ether') - web3.fromWei(oldBalance, 'ether');
+    assert.equal(sum, 1540000);
+    });
+
+    it('Correct ICO rate', async function() {
+    await this.sale.setCrowdsaleStage(2);
+    const oldBalance = await this.token.balanceOf(_);
+    await this.sale.sendTransaction({ value: ether(1), from: _});
+    const newBalance = await this.token.balanceOf(_);
+    const sum = await web3.fromWei(newBalance, 'ether') - web3.fromWei(oldBalance, 'ether');
+    assert.equal(sum, 1400000);
+    });
+  });
+
+  describe('CAP', function() {
+   it('CAP Limit (cap is 10 eth for test)', async function() {
+   await this.sale.sendTransaction({ value: ether(10), from: _}).should.be.fulfilled;
+   });
+   it('try buy more cap limit should be fail', async function() {
+   await this.sale.sendTransaction({ value: ether(11), from: _}).should.be.rejectedWith(EVMRevert);
+  });
+});
 
 });

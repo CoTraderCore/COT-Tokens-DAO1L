@@ -30,7 +30,9 @@ contract COTDAO is Ownable{
   }
 
  /*
-    Owner can mint new Tokens up to a certain limit
+  @dev Owner can mint new Tokens up to a certain limit
+  @param _beneficiary - tokens receiver
+  @param _tokenAmount - amount of mint tokens
  */
   function MintLimit(
     address _beneficiary,
@@ -49,7 +51,8 @@ contract COTDAO is Ownable{
   }
 
   /*
-    Owner can mint 0.01% from totalSuply per week
+  @dev Owner can mint 0.01% from totalSuply per week
+  @param _beneficiary - tokens receiver
   */
 
   function MintPercent(
@@ -64,7 +67,8 @@ contract COTDAO is Ownable{
   }
 
   /*
-   address with 51% balance can change Owner DAO
+   @dev address with 51% balance can change Owner DAO
+   @param _newOwner - new owner of DAO
   */
 
   function ChangeOwnerDAO(
@@ -77,7 +81,7 @@ contract COTDAO is Ownable{
   }
 
   /*
-    owner DAO can pause Token
+  @dev owner DAO can pause Token
     only through contract DAO
   */
 
@@ -89,7 +93,7 @@ contract COTDAO is Ownable{
   }
 
   /*
-    owner DAO can unpause Token
+  @dev owner DAO can unpause Token
     only through contract DAO
   */
 
@@ -101,7 +105,7 @@ contract COTDAO is Ownable{
   }
 
   /*
-     owner DAO can finish mint
+  @dev owner DAO can finish mint
   */
 
   function finishMint()
