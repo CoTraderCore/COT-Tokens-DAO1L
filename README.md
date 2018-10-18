@@ -8,7 +8,7 @@
 
 4) address with 51% can change Owner (if tootalSupply < limit, then address balance should be 50B + 0.0000000000000000001 COT)
 
-5) address with 51% can change Owner (if tootalSupply > limit, then address balance should be tootalSupply / 2)
+5) address with 51% can change Owner (if tootalSupply > limit, then address balance should be > tootalSupply / 2)
 
 # Install
 1) clone repo
