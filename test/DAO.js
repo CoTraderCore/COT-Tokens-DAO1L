@@ -35,12 +35,14 @@ contract('COTDAO', function([_, wallet]) {
      this.limit = ether(100000000000), // 100 000 000 000
      this.timeNow = Math.floor(Date.now() / 1000);
      this.openingdaoTime = latestTime() + duration.days(7); // 1 minute
+     this.half = ether(50000000000); // 50 000 000 000
 
      // Deploy COTDAO
      this.dao = await COTDAO.new(
        this.token.address,
        this.limit,
-       this.openingdaoTime
+       this.openingdaoTime,
+       this.half
     );
     // Transfer token ownership to dao
     await this.token.transferOwnership(this.dao.address);
@@ -110,6 +112,23 @@ contract('COTDAO', function([_, wallet]) {
     await this.dao.MintPercent(wallet).should.be.fulfilled;
     });
 
+    it('MintPercent work after limit', async function() {
+    await this.dao.pauseDAO();
+    await this.dao.MintLimit(wallet, ether(90000000000));
+    await increaseTimeTo(this.openingdaoTime);
+    await this.dao.MintPercent(wallet).should.be.fulfilled;
+    });
+
+    it('totalSupply increase when MintPercent call after limit', async function() {
+    await this.dao.pauseDAO();
+    await this.dao.MintLimit(wallet, ether(90000000000));
+    const oldTotal = await this.token.totalSupply();
+    await increaseTimeTo(this.openingdaoTime);
+    await this.dao.MintPercent(wallet).should.be.fulfilled;
+    const newTotal = await this.token.totalSupply();
+    assert.isTrue(web3.fromWei(newTotal, 'ether') > web3.fromWei(oldTotal, 'ether'));
+    });
+
     it('Call MintPercent at the allowed time should be fulfilled', async function() {
     await increaseTimeTo(this.openingdaoTime);
     await this.dao.MintPercent(wallet).should.be.fulfilled;
@@ -162,13 +181,21 @@ contract('COTDAO', function([_, wallet]) {
     });
 
     it('Call ChanheOwner from address with balance === no more half should fail', async function() {
-    await this.token.transfer(wallet, ether(5000000000));
+    await this.dao.MintLimit(wallet, ether(50000000000));
     await this.dao.ChangeOwnerDAO(wallet, { from: wallet }).should.be.rejectedWith(EVMRevert);
     });
 
     it('Call ChanheOwner from address with balance > totalSuply / 2 + 1 token should be fulfilled', async function() {
-    await this.token.transfer(wallet, ether(5000000001));
+    await this.dao.MintLimit(wallet, ether(50000000001));
     await this.dao.ChangeOwnerDAO(wallet, { from: wallet }).should.be.fulfilled;
+    });
+
+    it('Wallet with 50000000001 can not call change owner if owner call MintPercent after limit', async function() {
+    await this.dao.MintLimit(wallet, ether(50000000001));
+    await this.dao.MintLimit(_, ether(39999999999));
+    await increaseTimeTo(this.openingdaoTime);
+    await this.dao.MintPercent(_);
+    await this.dao.ChangeOwnerDAO(wallet, { from: wallet }).should.be.rejectedWith(EVMRevert);
     });
   });
 

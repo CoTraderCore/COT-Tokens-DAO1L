@@ -11,17 +11,20 @@ contract COTDAO is Ownable{
   ERC20 private token;
   uint256 private limit;
   uint256 private openingTime;
+  uint256 private half;
 
   constructor(
     ERC20 _token,
     uint256 _limit,
-    uint256 _openingTime
+    uint256 _openingTime,
+    uint256 _half
     )
     public {
     require(_token != address(0));
     token = _token;
     limit = _limit;
     openingTime = _openingTime;
+    half = _half;
   }
 
   modifier onlyWhenOpen {
@@ -51,7 +54,7 @@ contract COTDAO is Ownable{
   }
 
   /*
-  @dev Owner can mint 0.01% from totalSuply per week
+  @dev Owner can mint 0.1% from totalSuply per week
   @param _beneficiary - tokens receiver
   */
 
@@ -68,6 +71,8 @@ contract COTDAO is Ownable{
 
   /*
    @dev address with 51% balance can change Owner DAO
+   start from 50B (half of 100B)
+   require dynamic calculate if 100B increased via MintPercent
    @param _newOwner - new owner of DAO
   */
 
@@ -76,6 +81,7 @@ contract COTDAO is Ownable{
   )
     public
   {
+  require(token.balanceOf(msg.sender) > half);
   require(token.balanceOf(msg.sender) > token.totalSupply().div(2));
   super._transferOwnership(_newOwner);
   }

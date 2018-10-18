@@ -36,18 +36,22 @@ contract('Sale', function([_, wallet]) {
      this.limit = ether(100000000000), // 100 000 000 000
      this.timeNow = Math.floor(Date.now() / 1000);
      this.openingdaoTime = latestTime() + duration.days(7); // 1 minute
+     this.half = ether(50000000000); // 50 000 000 000
 
      // Deploy COTDAO
      this.dao = await COTDAO.new(
        this.token.address,
        this.limit,
-       this.openingdaoTime
+       this.openingdaoTime,
+       this.half
    );
 
     //Crowdsale
     this.rate = 1750000;
     this.wallet = "0x627306090abab3a6e1400e9345bc60c78a8bef57"; // TODO: Replace me
     this.cap = ether(10); // CAP
+    this.ICOrate = 1400000;
+    this.percent = 24;
     //Deploy sale
     this.sale = await Sale.new(
         this.rate,
@@ -55,7 +59,9 @@ contract('Sale', function([_, wallet]) {
         this.token.address,
         this.dao.address,
         this.limit,
-        this.cap
+        this.cap,
+        this.percent,
+        this.ICOrate
     );
     // block Tokens
     await this.token.pause();
@@ -80,10 +86,15 @@ contract('Sale', function([_, wallet]) {
     const sum = await web3.fromWei(newBalance, 'ether') - web3.fromWei(oldBalance, 'ether');
     assert.equal(sum, 1750000);
     });
+
+    it('Balance Wallet 0', async function() {
+    const balance = await this.token.balanceOf(wallet);
+    assert.equal(web3.fromWei(balance, 'ether'), 0);
+    });
   });
 
   describe('SALE ownership', function() {
-    it('DAO can not mint if owner SALE', async function() {
+    it('DAO can not mint if owner is SALE', async function() {
     await this.dao.MintLimit(_, ether(1)).should.be.rejectedWith(EVMRevert);
     });
 
@@ -125,50 +136,127 @@ contract('Sale', function([_, wallet]) {
     });
   });
 
-  describe('BONUS for early investors', function() {
-    it('Owner can change ICOstate', async function() {
-    await this.sale.setCrowdsaleStage(1, { from:_ }).should.be.fulfilled;
-    });
-
-    it('NOT Owner can NOT change ICOstate', async function() {
-    await this.sale.setCrowdsaleStage(1, { from:wallet }).should.be.rejectedWith(EVMRevert);
-    });
-
-    it('Correct PrePreICO rate percent (25%)', async function() {
-    await this.sale.setCrowdsaleStage(0);
-    const oldBalance = await this.token.balanceOf(_);
-    await this.sale.sendTransaction({ value: ether(1), from: _});
-    const newBalance = await this.token.balanceOf(_);
-    const sum = await web3.fromWei(newBalance, 'ether') - web3.fromWei(oldBalance, 'ether');
-    assert.equal(sum, 1750000);
-    });
-
-    it('Correct PreICO  rate percent (10%)', async function() {
-    await this.sale.setCrowdsaleStage(1);
-    const oldBalance = await this.token.balanceOf(_);
-    await this.sale.sendTransaction({ value: ether(1), from: _});
-    const newBalance = await this.token.balanceOf(_);
-    const sum = await web3.fromWei(newBalance, 'ether') - web3.fromWei(oldBalance, 'ether');
-    assert.equal(sum, 1540000);
-    });
-
-    it('Correct ICO rate', async function() {
-    await this.sale.setCrowdsaleStage(2);
-    const oldBalance = await this.token.balanceOf(_);
-    await this.sale.sendTransaction({ value: ether(1), from: _});
-    const newBalance = await this.token.balanceOf(_);
-    const sum = await web3.fromWei(newBalance, 'ether') - web3.fromWei(oldBalance, 'ether');
-    assert.equal(sum, 1400000);
-    });
-  });
-
   describe('CAP', function() {
-   it('CAP Limit (cap is 10 eth for test)', async function() {
-   await this.sale.sendTransaction({ value: ether(10), from: _}).should.be.fulfilled;
+    it('CAP Limit (cap is 10 eth for test)', async function() {
+    await this.sale.sendTransaction({ value: ether(10), from: _}).should.be.fulfilled;
+    });
+    it('try buy more cap limit should be fail', async function() {
+    await this.sale.sendTransaction({ value: ether(11), from: _}).should.be.rejectedWith(EVMRevert);
    });
-   it('try buy more cap limit should be fail', async function() {
-   await this.sale.sendTransaction({ value: ether(11), from: _}).should.be.rejectedWith(EVMRevert);
   });
-});
 
+  describe('BONUS for early investors', function() {
+    it('NOT Owner can NOT call ReduceRate', async function() {
+    await this.sale.ReduceRate({ from: wallet}).should.be.rejectedWith(EVMRevert);
+    });
+
+    it('Correct ReduceRate call, after 25 call rate equal 1400000', async function() {
+    for(var i = 0; i < 25; i ++){
+    await this.sale.ReduceRate({ from: _ }).should.be.fulfilled;
+    }
+    const r = await this.sale.rate();
+    assert.equal(r.toNumber(), 1400000);
+    });
+
+    it('Can not call ReduceRate more than 25 times', async function() {
+    for(var i = 0; i < 25; i ++){
+    await this.sale.ReduceRate({ from: _ }).should.be.fulfilled;
+    }
+    await this.sale.ReduceRate({ from: _ }).should.be.rejectedWith(EVMRevert);
+    });
+
+    it('Correct reduce percent after 1 call percent is 24% is 336000 (1400 000 / 100 * 24)', async function() {
+    await this.sale.ReduceRate({ from: _ }); // 24%
+    await this.sale.sendTransaction({ value: ether(1), from: wallet});
+    const balance = await this.token.balanceOf(wallet);
+    const sum = await web3.fromWei(balance, 'ether') - 1400000;
+    assert.equal(sum, 336000);
+    });
+
+    it('Correct reduce percent after 4 call percent is 20% is 280000 (1400 000 / 100 * 20)', async function() {
+    await this.sale.ReduceRate({ from: _ }); // 24%
+    await this.sale.ReduceRate({ from: _ }); // 23%
+    await this.sale.ReduceRate({ from: _ }); // 22%
+    await this.sale.ReduceRate({ from: _ }); // 21%
+    await this.sale.ReduceRate({ from: _ }); // 20%
+
+    await this.sale.sendTransaction({ value: ether(1), from: wallet});
+    const balance = await this.token.balanceOf(wallet);
+    const sum = await web3.fromWei(balance, 'ether') - 1400000;
+    assert.equal(sum, 280000);
+    });
+
+    it('OPTIONAL Repeat Test Correct reduce 1% percent with out loop', async function() {
+    await this.sale.ReduceRate({ from: _ }); // 24%
+    await this.sale.ReduceRate({ from: _ }); // 23%
+    await this.sale.ReduceRate({ from: _ }); // 22%
+    await this.sale.ReduceRate({ from: _ }); // 21%
+    await this.sale.ReduceRate({ from: _ }); // 20%
+    await this.sale.ReduceRate({ from: _ }); // 19%
+    await this.sale.ReduceRate({ from: _ }); // 18%
+    await this.sale.ReduceRate({ from: _ }); // 17%
+    await this.sale.ReduceRate({ from: _ }); // 16%
+    await this.sale.ReduceRate({ from: _ }); // 15%
+    await this.sale.ReduceRate({ from: _ }); // 14%
+    await this.sale.ReduceRate({ from: _ }); // 13%
+    await this.sale.ReduceRate({ from: _ }); // 12%
+    await this.sale.ReduceRate({ from: _ }); // 11%
+    await this.sale.ReduceRate({ from: _ }); // 10%
+    await this.sale.ReduceRate({ from: _ }); // 9%
+    await this.sale.ReduceRate({ from: _ }); // 8%
+    await this.sale.ReduceRate({ from: _ }); // 7%
+    await this.sale.ReduceRate({ from: _ }); // 6%
+    await this.sale.ReduceRate({ from: _ }); // 5%
+    await this.sale.ReduceRate({ from: _ }); // 4%
+    await this.sale.ReduceRate({ from: _ }); // 3%
+    await this.sale.ReduceRate({ from: _ }); // 2%
+    await this.sale.ReduceRate({ from: _ }); // 1%
+
+    await this.sale.sendTransaction({ value: ether(1), from: wallet});
+    const balance = await this.token.balanceOf(wallet);
+    const sum = await web3.fromWei(balance, 'ether') - 1400000;
+    assert.equal(sum, 14000);
+    });
+
+    it('OPTIONAL Repeat Test Correct reduce 0% percent with out loop', async function() {
+    await this.sale.ReduceRate({ from: _ }); // 24%
+    await this.sale.ReduceRate({ from: _ }); // 23%
+    await this.sale.ReduceRate({ from: _ }); // 22%
+    await this.sale.ReduceRate({ from: _ }); // 21%
+    await this.sale.ReduceRate({ from: _ }); // 20%
+    await this.sale.ReduceRate({ from: _ }); // 19%
+    await this.sale.ReduceRate({ from: _ }); // 18%
+    await this.sale.ReduceRate({ from: _ }); // 17%
+    await this.sale.ReduceRate({ from: _ }); // 16%
+    await this.sale.ReduceRate({ from: _ }); // 15%
+    await this.sale.ReduceRate({ from: _ }); // 14%
+    await this.sale.ReduceRate({ from: _ }); // 13%
+    await this.sale.ReduceRate({ from: _ }); // 12%
+    await this.sale.ReduceRate({ from: _ }); // 11%
+    await this.sale.ReduceRate({ from: _ }); // 10%
+    await this.sale.ReduceRate({ from: _ }); // 9%
+    await this.sale.ReduceRate({ from: _ }); // 8%
+    await this.sale.ReduceRate({ from: _ }); // 7%
+    await this.sale.ReduceRate({ from: _ }); // 6%
+    await this.sale.ReduceRate({ from: _ }); // 5%
+    await this.sale.ReduceRate({ from: _ }); // 4%
+    await this.sale.ReduceRate({ from: _ }); // 3%
+    await this.sale.ReduceRate({ from: _ }); // 2%
+    await this.sale.ReduceRate({ from: _ }); // 1%
+    await this.sale.ReduceRate({ from: _ }); // 0%
+
+    await this.sale.sendTransaction({ value: ether(1), from: wallet});
+    const balance = await this.token.balanceOf(wallet);
+    const sum = await web3.fromWei(balance, 'ether') - 1400000;
+    assert.equal(sum, 0);
+    });
+
+    it('OPTIONAL Owner can NOT call more then 25 even if percent more 24 beceuse default rate is 1750000', async function() {
+    this.percent = 30;
+    for(var i = 0; i < 25; i ++){
+    await this.sale.ReduceRate({ from: _ }).should.be.fulfilled;
+    }
+    await this.sale.ReduceRate({ from: _ }).should.be.rejectedWith(EVMRevert);
+    });
+  });
 });

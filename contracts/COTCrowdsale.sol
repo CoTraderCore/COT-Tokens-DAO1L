@@ -4,26 +4,25 @@ import "openzeppelin-solidity/contracts/crowdsale/Crowdsale.sol";
 import "openzeppelin-solidity/contracts/crowdsale/emission/MintedCrowdsale.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/crowdsale/validation/CappedCrowdsale.sol";
-
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract COTCrowdsale is Crowdsale, MintedCrowdsale, CappedCrowdsale, Ownable{
+  using SafeMath for uint256;
   address DAOaddress;
   ERC20 private token;
   uint256 private limit;
+  uint256 private percent;
+  uint256 private ICOrate;
 
-  // Crowdsale Stages
-  enum CrowdsaleStage {PrePreICO, PreICO, ICO } // 0 - PrePreICO 1 - PreICO,  2 - ICO
-  // Default to presale stage
-  CrowdsaleStage public stage = CrowdsaleStage.PrePreICO;
-
-
-  constructor(
+ constructor(
     uint256 _rate,
     address _wallet,
     ERC20 _token,
     address _DAOaddress,
     uint256 _limit,
-    uint _cap
+    uint256 _cap,
+    uint256 _percent,
+    uint256 _ICOrate
   )
   Crowdsale(_rate, _wallet, _token)
   CappedCrowdsale(_cap)
@@ -32,30 +31,27 @@ contract COTCrowdsale is Crowdsale, MintedCrowdsale, CappedCrowdsale, Ownable{
     DAOaddress = _DAOaddress;
     token = _token;
     limit = _limit;
+    percent = _percent;
+    ICOrate = _ICOrate;
   }
 
   /*
-  @dev Owner can update the crowdsale stage
-  @param _stage Crowdsale stage
+    @dev Owner can reduce bonus percent 25% by default
+    each call reduces of 1%
   */
 
- function setCrowdsaleStage(uint _stage) public onlyOwner {
-   if(uint(CrowdsaleStage.PrePreICO) == _stage) {
-     stage = CrowdsaleStage.PrePreICO;
-   } else if(uint(CrowdsaleStage.PreICO) == _stage) {
-     stage = CrowdsaleStage.PreICO;
-   } else if (uint(CrowdsaleStage.ICO) == _stage) {
-     stage = CrowdsaleStage.ICO;
-   }
-
-   if(stage == CrowdsaleStage.PrePreICO) {
-     rate = 1750000; // + 25%
-   } else if(stage == CrowdsaleStage.PreICO) {
-     rate = 1540000; // + 10%
-   } else if (stage == CrowdsaleStage.ICO) {
-     rate = 1400000;
-   }
- }
+  function ReduceRate()
+    public
+    onlyOwner()
+  {
+    require(rate > 1400000);
+    uint256 total;
+    total = ICOrate.div(100).mul(percent);
+    rate = ICOrate.add(total);
+    if (percent != 0) {
+    percent = percent.sub(1);
+    }
+  }
 
   /*
     @dev Owner can mint new Tokens up to a certain limit
