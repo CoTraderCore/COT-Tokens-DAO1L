@@ -6,9 +6,7 @@
 
 3) 10B to Team vested (time is setting in the migration)
 
-4) 20B will go to owner wallet for sales manually
-
-5) pool address can changeOwner
+4) pool address can changeOwner
 
 [Correct mint limit (no more no less) (video)](https://vk.com/videos223443924?z=video223443924_456239565%2Fpl_223443924_-2)
 
