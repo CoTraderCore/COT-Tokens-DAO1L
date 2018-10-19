@@ -180,7 +180,7 @@ contract('COTDAO', function([_, wallet]) {
     await this.dao.ChangeOwnerDAO(wallet, { from: _ }).should.be.rejectedWith(EVMRevert);
     });
 
-    it('Call ChanheOwner from address with balance === no more half should fail', async function() {
+    it('Call ChangeOwner from address with balance === no more half should fail', async function() {
     await this.dao.MintLimit(wallet, ether(50000000000));
     await this.dao.ChangeOwnerDAO(wallet, { from: wallet }).should.be.rejectedWith(EVMRevert);
     });
@@ -290,7 +290,7 @@ contract('COTDAO', function([_, wallet]) {
     });
   });
 
-  describe('Mint Limitation', function() {
+  describe('Mint from Token contract', function() {
     it('Owner call token mint not through DAO should be fail', async function() {
     await this.token.mint(_, ether(1)).should.be.rejectedWith(EVMRevert);
     });

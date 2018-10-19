@@ -88,7 +88,7 @@ contract COTDAO is Ownable{
 
   /*
   @dev owner DAO can pause Token
-    only through contract DAO
+  only through contract DAO
   */
 
   function pauseDAO()

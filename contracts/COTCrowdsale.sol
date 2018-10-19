@@ -8,10 +8,11 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract COTCrowdsale is Crowdsale, MintedCrowdsale, CappedCrowdsale, Ownable{
   using SafeMath for uint256;
-  address DAOaddress;
+  address public DAOaddress;
   ERC20 private token;
   uint256 private limit;
   uint256 private percent;
+  uint256 private totalPercent;
   uint256 private ICOrate;
 
  constructor(
@@ -45,9 +46,8 @@ contract COTCrowdsale is Crowdsale, MintedCrowdsale, CappedCrowdsale, Ownable{
     onlyOwner()
   {
     require(rate > 1400000);
-    uint256 total;
-    total = ICOrate.div(100).mul(percent);
-    rate = ICOrate.add(total);
+    totalPercent = ICOrate.div(100).mul(percent);
+    rate = ICOrate.add(totalPercent);
     if (percent != 0) {
     percent = percent.sub(1);
     }

@@ -79,6 +79,11 @@ contract('Sale', function([_, wallet]) {
     await this.token.transfer(wallet, ether(1)).should.be.rejectedWith(EVMRevert);
     });
 
+    it('Correct DAO address in sale contract', async function() {
+    const DAOaddress = await this.sale.DAOaddress();
+    assert.equal(DAOaddress, this.dao.address);
+    });
+
     it('Correct init rate (PrePreSale by default) (25%)', async function() {
     const oldBalance = await this.token.balanceOf(_);
     await this.sale.sendTransaction({ value: ether(1), from: _});
@@ -93,18 +98,44 @@ contract('Sale', function([_, wallet]) {
     });
   });
 
-  describe('SALE ownership', function() {
-    it('DAO can not mint if owner is SALE', async function() {
+  describe('SALE', function() {
+    it('Owner DAO can not call mintLimit if owner is SALE', async function() {
     await this.dao.MintLimit(_, ether(1)).should.be.rejectedWith(EVMRevert);
     });
 
-    it('DAO can mint if sale transferOwnership', async function() {
+    it('Owner DAO can call mintLimit if sale transferOwnership', async function() {
     await this.sale.transferTokenOwnerToDAO();
     await this.dao.MintLimit(_, ether(1)).should.be.fulfilled;
     });
 
-    it('Owner Sale can call MintLimit', async function() {
+    it('DAO can not call mintPercent if owner is SALE', async function() {
+    await this.dao.MintLimit(_, ether(1)).should.be.rejectedWith(EVMRevert);
+    });
+
+    it('DAO can call mintPercent if sale transferOwnership', async function() {
+    await this.sale.transferTokenOwnerToDAO();
+    await this.dao.MintLimit(_, ether(1)).should.be.fulfilled;
+    });
+
+    it('Owner DAO can not call unpauseDAO if owner is SALE', async function() {
+    await this.dao.unpauseDAO().should.be.rejectedWith(EVMRevert);
+    });
+
+    it('Owner DAO can call unpauseDAO if sale transferOwnership', async function() {
+    await this.sale.transferTokenOwnerToDAO();
+    await this.dao.unpauseDAO().should.be.fulfilled;
+    });
+
+    it('Owner Sale can call MintLimit from sale', async function() {
     await this.sale.MintLimit(_, ether(1)).should.be.fulfilled;
+    });
+
+    it('NOT Owner Sale can NOT call MintLimit from sale', async function() {
+    await this.sale.MintLimit(_, ether(1), { from:wallet }).should.be.rejectedWith(EVMRevert);
+    });
+
+    it('NOT Owner Sale can NOT call transferTokenOwnerToDAO', async function() {
+    await this.sale.transferTokenOwnerToDAO({ from:wallet });.should.be.rejectedWith(EVMRevert);
     });
 
     it('Owner Sale can not mint after transferOwnership', async function() {
@@ -112,14 +143,14 @@ contract('Sale', function([_, wallet]) {
     await this.sale.MintLimit(_, ether(1)).should.be.rejectedWith(EVMRevert);
     });
 
-    it('totalSuply increase when owner call MintLimit', async function() {
+    it('totalSuply increase when owner call MintLimit from sale', async function() {
     const before = await this.token.totalSupply();
     await this.sale.MintLimit(_, ether(1));
     const after = await this.token.totalSupply();
     assert.isTrue(web3.fromWei(after, 'ether') > web3.fromWei(before, 'ether'));
     });
 
-    it('receiver balance increase when owner call MintLimit', async function() {
+    it('receiver balance increase when owner call MintLimit from sale', async function() {
     const before = await this.token.balanceOf(wallet);
     await this.sale.MintLimit(wallet, ether(1));
     const after = await this.token.balanceOf(wallet);
@@ -133,6 +164,13 @@ contract('Sale', function([_, wallet]) {
     it('Sale contract CAN NOT exchange ETH to tokens after transferOwnership', async function() {
     await this.sale.transferTokenOwnerToDAO();
     await this.sale.sendTransaction({ value: ether(1), from: _}).should.be.rejectedWith(EVMRevert);
+    });
+
+    it('sender balance increase after send ETH to ICO contract', async function() {
+    const before = await this.token.balanceOf(_);
+    await this.sale.sendTransaction({ value: ether(1), from: _});
+    const after = await this.token.balanceOf(_);
+    assert.isTrue(web3.fromWei(after, 'ether') > web3.fromWei(before, 'ether'));
     });
   });
 
@@ -155,7 +193,7 @@ contract('Sale', function([_, wallet]) {
     await this.sale.ReduceRate({ from: _ }).should.be.fulfilled;
     }
     const r = await this.sale.rate();
-    assert.equal(r.toNumber(), 1400000);
+    assert.equal(r, 1400000);
     });
 
     it('Can not call ReduceRate more than 25 times', async function() {
@@ -251,7 +289,7 @@ contract('Sale', function([_, wallet]) {
     assert.equal(sum, 0);
     });
 
-    it('OPTIONAL Owner can NOT call more then 25 even if percent more 24 beceuse default rate is 1750000', async function() {
+    it('Owner can NOT call more then 25 even if percent more 24 beceuse default rate is 1750000', async function() {
     this.percent = 30;
     for(var i = 0; i < 25; i ++){
     await this.sale.ReduceRate({ from: _ }).should.be.fulfilled;

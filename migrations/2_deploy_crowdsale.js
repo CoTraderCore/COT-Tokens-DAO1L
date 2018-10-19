@@ -32,11 +32,11 @@ module.exports = function(deployer) {
   const ICOrate = 1400000;
   const percent = 24;
   const ICOWallet = "0x7035fb83a7c18289b94e443170bee56b92df8e46"; // TODO: Replace me
-  const cap = ether(500); // TODO: Replace me
+  const cap = ether(3000);
 
   // Vesting
-  const start = 1538568527; // Unix Data TODO: (SEND RIGHT Data)
-  const cliff = _duration.years(1); // Time in seconds
+  const start = 1539926426; // Unix Data TODO: (SEND RIGHT Data)
+  const cliff = _duration.weeks(4); // Time in seconds
   const duration = _duration.years(4); // Time in seconds
   const revocable = false; // Owner can not return tokens until time runs out
   const timeNow = Math.floor(Date.now() / 1000);
@@ -63,13 +63,13 @@ module.exports = function(deployer) {
 
     await deployer.deploy(COTDAO, Token.address, limit, openingMintTime, half);
     // transferOwnership of DAO to Gary
-  //  const dao = await Token.at(COTDAO.address); //TODO: uncoment me
-  //  await dao.transferOwnership(GaryAddress); //TODO: uncoment me
+    //const dao = await Token.at(COTDAO.address); //TODO: uncoment me
+    //await dao.transferOwnership(GaryAddress); //TODO: uncoment me
 
     await deployer.deploy(COTCrowdsale, rate, ICOWallet, Token.address, COTDAO.address, limit, cap, percent, ICOrate);
     // transferOwnership of Sale to Gary
-  //  const sale = await Token.at(COTCrowdsale.address); //TODO: uncoment me
-  //  await sale.transferOwnership(GaryAddress); //TODO: uncoment me
+    //const sale = await Token.at(COTCrowdsale.address); //TODO: uncoment me
+    //await sale.transferOwnership(GaryAddress); //TODO: uncoment me
     // transferOwnership of token to sale contract
     await token.transferOwnership(COTCrowdsale.address);
   })
