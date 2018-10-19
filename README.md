@@ -23,7 +23,8 @@
 # Deploy
 0) Set infura_apikey and metamask mnemonic in truffle.js
 1) Remove bild folder (if it is created)
-2) truffle migrate compile-all --network YOUR NETWORK
+2) Reset Metamask account
+3) truffle migrate compile-all --network YOUR NETWORK
 
 
 # COT Distribution
