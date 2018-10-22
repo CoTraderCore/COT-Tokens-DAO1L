@@ -8,7 +8,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/PausableToken.sol";
 contract COTDAO is Ownable{
   using SafeMath for uint256;
 
-  ERC20 private token;
+  ERC20   private token;
   uint256 private limit;
   uint256 private openingTime;
   uint256 private half;
@@ -33,6 +33,14 @@ contract COTDAO is Ownable{
   }
 
  /*
+  @dev check the correctness of address
+ */
+
+  function TokenAddress() public view returns (address) {
+    return token;
+  }
+
+ /*
   @dev Owner can mint new Tokens up to a certain limit
   @param _beneficiary - tokens receiver
   @param _tokenAmount - amount of mint tokens
@@ -44,9 +52,10 @@ contract COTDAO is Ownable{
     public
     onlyOwner()
   {
-  require(token.totalSupply() < limit);
+  uint256 total = token.totalSupply();
+  require(total < limit);
 
-  if(_tokenAmount.add(token.totalSupply()) > limit ){
+  if(_tokenAmount.add(total) > limit ){
     _tokenAmount = 0;
   }
   require(_tokenAmount > 0);
@@ -54,7 +63,7 @@ contract COTDAO is Ownable{
   }
 
   /*
-  @dev Owner can mint 0.1% from totalSuply per week
+  @dev Owner can mint 0.1% from totalSupply per week
   @param _beneficiary - tokens receiver
   */
 
@@ -65,14 +74,15 @@ contract COTDAO is Ownable{
     onlyOwner()
     onlyWhenOpen()
   {
-  require(MintableToken(address(token)).mint(_beneficiary, token.totalSupply().div(100).div(10)));
+  uint256 total = token.totalSupply();
+  require(MintableToken(address(token)).mint(_beneficiary, total.div(100).div(10)));
   openingTime = now.add(7 days);
   }
 
   /*
    @dev address with 51% balance can change Owner DAO
-   start from 50B (half of 100B)
-   require dynamic calculate if 100B increased via MintPercent
+   require 1 start from 50B (half of 100B)
+   require 2 dynamic calculate if 100B increased via MintPercent after limit
    @param _newOwner - new owner of DAO
   */
 
@@ -81,8 +91,9 @@ contract COTDAO is Ownable{
   )
     public
   {
+  uint256 total = token.totalSupply();
   require(token.balanceOf(msg.sender) > half);
-  require(token.balanceOf(msg.sender) > token.totalSupply().div(2));
+  require(token.balanceOf(msg.sender) > total.div(2));
   super._transferOwnership(_newOwner);
   }
 

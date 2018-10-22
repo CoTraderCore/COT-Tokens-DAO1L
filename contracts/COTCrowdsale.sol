@@ -7,13 +7,13 @@ import "openzeppelin-solidity/contracts/crowdsale/validation/CappedCrowdsale.sol
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract COTCrowdsale is Crowdsale, MintedCrowdsale, CappedCrowdsale, Ownable{
-  using SafeMath for uint256;
-  address public DAOaddress;
-  ERC20 private token;
-  uint256 private limit;
-  uint256 private percent;
-  uint256 private totalPercent;
-  uint256 private ICOrate;
+
+ using SafeMath for uint256;
+
+ address private DAOaddress;
+ uint256 private limit;
+ uint256 private percent;
+ uint256 private ICOrate;
 
  constructor(
     uint256 _rate,
@@ -30,10 +30,17 @@ contract COTCrowdsale is Crowdsale, MintedCrowdsale, CappedCrowdsale, Ownable{
   public
   {
     DAOaddress = _DAOaddress;
-    token = _token;
     limit = _limit;
     percent = _percent;
     ICOrate = _ICOrate;
+  }
+
+  /*
+    @dev check the correctness of address
+  */
+
+  function DAOAddress() public view returns (address) {
+    return DAOaddress;
   }
 
   /*
@@ -45,8 +52,8 @@ contract COTCrowdsale is Crowdsale, MintedCrowdsale, CappedCrowdsale, Ownable{
     public
     onlyOwner()
   {
-    require(rate > 1400000);
-    totalPercent = ICOrate.div(100).mul(percent);
+    require(rate > ICOrate);
+    uint256 totalPercent = ICOrate.div(100).mul(percent);
     rate = ICOrate.add(totalPercent);
     if (percent != 0) {
     percent = percent.sub(1);
@@ -65,17 +72,18 @@ contract COTCrowdsale is Crowdsale, MintedCrowdsale, CappedCrowdsale, Ownable{
     public
     onlyOwner()
   {
-  require(token.totalSupply() < limit);
+  uint256 total = token.totalSupply();
+  require(total < limit);
 
-  if(_tokenAmount.add(token.totalSupply()) > limit ){
-     _tokenAmount = 0;
+  if(_tokenAmount.add(total) > limit ){
+    _tokenAmount = 0;
   }
   require(_tokenAmount > 0);
   require(MintableToken(address(token)).mint(_beneficiary, _tokenAmount));
   }
 
   /*
-  @dev Owner can transfer token owner permissions to DAO contract
+    @dev Owner can transfer token owner permissions to DAO contract
   */
 
   function transferTokenOwnerToDAO()

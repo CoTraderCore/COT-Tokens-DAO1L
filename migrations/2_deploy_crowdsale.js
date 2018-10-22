@@ -44,7 +44,7 @@ module.exports = function(deployer) {
   const amount = ether(10000000000); // Tokens for Vesting contract 10 000 000 000
 
   // DAO
-  const openingMintTime = timeNow + _duration.days(7);
+  const openingMintTime = timeNow + _duration.minutes(7); // TODO: Replace me
   const limit = ether(100000000000); // 100 000 000 000
   const half =  ether(50000000000); // 50 000 000 000
   const GaryAddress = "0x7035fb83a7c18289b94e443170bee56b92df8e46"; //TODO: Replace me
@@ -63,12 +63,12 @@ module.exports = function(deployer) {
 
     await deployer.deploy(COTDAO, Token.address, limit, openingMintTime, half);
     // transferOwnership of DAO to Gary
-    //const dao = await Token.at(COTDAO.address); //TODO: uncoment me
-    //await dao.transferOwnership(GaryAddress); //TODO: uncoment me
+  //  const dao = await Token.at(COTDAO.address); //TODO: uncoment me
+  //  await dao.transferOwnership(GaryAddress); //TODO: uncoment me
 
     await deployer.deploy(COTCrowdsale, rate, ICOWallet, Token.address, COTDAO.address, limit, cap, percent, ICOrate);
     // transferOwnership of Sale to Gary
-    //const sale = await Token.at(COTCrowdsale.address); //TODO: uncoment me
+  //  const sale = await Token.at(COTCrowdsale.address); //TODO: uncoment me
     //await sale.transferOwnership(GaryAddress); //TODO: uncoment me
     // transferOwnership of token to sale contract
     await token.transferOwnership(COTCrowdsale.address);
